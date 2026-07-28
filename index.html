@@ -264,31 +264,114 @@ let data = [];
 let sortKey = null;
 let sortDir = 1;
 let activeMeetId = null;
-const STORAGE_KEY = 'campanha-liderancas-v2';
+const STORAGE_KEY = "campanha-liderancas-v2";
 
-function uid(){ return 'l' + Math.random().toString(36).slice(2,10); }
+/*
+Cole aqui a URL gerada pelo Google Apps Script
+*/
+const API_URL =
+"https://script.google.com/macros/s/SUA_URL_AQUI/exec";
+
+function uid(){
+  return 'l' + Math.random().toString(36).slice(2,10);
+}
 
 async function loadData(){
+
   try{
-    const res = await window.storage.get(STORAGE_KEY, false);
-    data = res ? JSON.parse(res.value) : [];
-  }catch(e){
+
+    const response =
+      await fetch(API_URL);
+
+    data =
+      await response.json();
+
+    if(!Array.isArray(data)){
+      data = [];
+    }
+
+  }catch(error){
+
+    console.error(error);
+
     data = [];
+
   }
-  data.forEach(d=>{ if(!Array.isArray(d.reunioes)) d.reunioes = []; });
+
+  data.forEach(item=>{
+
+    if(typeof item.reunioes === "string"){
+
+      try{
+
+        item.reunioes =
+          JSON.parse(item.reunioes);
+
+      }catch{
+
+        item.reunioes = [];
+
+      }
+
+    }
+
+    if(!Array.isArray(item.reunioes)){
+
+      item.reunioes = [];
+
+    }
+
+  });
+
   render();
+
 }
 
 async function saveData(){
-  const statusEl = document.getElementById('saveStatus');
-  statusEl.textContent = 'Salvando...';
+
+  const statusEl =
+    document.getElementById("saveStatus");
+
+  statusEl.textContent =
+    "Salvando...";
+
   try{
-    await window.storage.set(STORAGE_KEY, JSON.stringify(data), false);
-    statusEl.textContent = 'Salvo';
-    setTimeout(()=>{ if(statusEl.textContent==='Salvo') statusEl.textContent=''; }, 1500);
-  }catch(e){
-    statusEl.textContent = 'Erro ao salvar — tente novamente';
+
+    await fetch(API_URL,{
+
+      method:"POST",
+
+      headers:{
+        "Content-Type":"application/json"
+      },
+
+      body:
+        JSON.stringify(data)
+
+    });
+
+    statusEl.textContent =
+      "Salvo";
+
+    setTimeout(()=>{
+
+      if(statusEl.textContent === "Salvo"){
+
+        statusEl.textContent = "";
+
+      }
+
+    },1500);
+
+  }catch(error){
+
+    console.error(error);
+
+    statusEl.textContent =
+      "Erro ao salvar";
+
   }
+
 }
 
 function addRow(){
