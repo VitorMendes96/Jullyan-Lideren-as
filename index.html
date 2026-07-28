@@ -284,7 +284,9 @@ async function loadData(){
   try{
 
     const response =
-      await fetch(API_URL);
+      await fetch(API_URL,{
+  method:'POST'
+});
 
     data =
       await response.json();
