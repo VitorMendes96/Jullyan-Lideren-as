@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Gestão de Votos — Painel de Lideranças</title>
+<style>
+  :root{
+    --bg:#F4F6F9;
+    --surface:#FFFFFF;
+    --navy:#12233F;
+    --navy-2:#1D3A63;
+    --gold:#B8862B;
+    --green:#1E7A46;
+    --green-bg:#E6F3EB;
+    --amber:#C98A1B;
+    --amber-bg:#FBF0DD;
+    --red:#B23A32;
+    --red-bg:#F8E9E7;
+    --text:#1A1F2B;
+    --muted:#667085;
+    --border:#E3E6EA;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:24px;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:14px;
+  }
+  h1,h2,h3{font-family:Georgia,"Times New Roman",serif; margin:0; color:var(--navy);}
+  .top{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; flex-wrap:wrap; gap:12px;}
+  .top h1{font-size:26px; letter-spacing:.2px;}
+  .top .sub{color:var(--muted); font-size:13px; margin-top:4px;}
+  .eyebrow{
+    text-transform:uppercase; letter-spacing:1.5px; font-size:11px; color:var(--gold);
+    font-weight:700; margin-bottom:4px;
+  }
+
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-bottom:20px;}
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:14px 16px; position:relative; overflow:hidden;
+  }
+  .card::before{
+    content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--navy-2);
+  }
+  .card.confirm::before{background:var(--green);}
+  .card.gold::before{background:var(--gold);}
+  .card.amber::before{background:var(--amber);}
+  .card .label{font-size:10.5px; text-transform:uppercase; letter-spacing:.7px; color:var(--muted); font-weight:600;}
+  .card .value{font-size:26px; font-weight:700; color:var(--navy); font-variant-numeric:tabular-nums; margin-top:4px;}
+  .card .value.small{font-size:22px;}
+  .card .value.green{color:var(--green);}
+
+  .panel{
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:18px 20px; margin-bottom:20px;
+  }
+  .panel h2{font-size:16px; margin-bottom:14px;}
+
+  .layout{display:grid; grid-template-columns:1.3fr 1fr; gap:16px;}
+  @media (max-width:900px){.layout{grid-template-columns:1fr;}}
+
+  .bar-row{display:grid; grid-template-columns:110px 1fr 130px; align-items:center; gap:10px; margin-bottom:10px; font-size:13px;}
+  .bar-row .name{color:var(--text); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .bar-track{background:var(--bg); border-radius:6px; height:18px; overflow:hidden; position:relative; border:1px solid var(--border);}
+  .bar-fill{height:100%; background:linear-gradient(90deg,var(--navy-2),var(--navy)); border-radius:6px 0 0 6px;}
+  .bar-fill.gold{background:linear-gradient(90deg,#D9A64C,var(--gold));}
+  .bar-nums{color:var(--muted); font-variant-numeric:tabular-nums; text-align:right;}
+
+  .toolbar{display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap;}
+  .toolbar input[type=text]{
+    flex:1; min-width:180px; padding:9px 12px; border:1px solid var(--border); border-radius:8px;
+    font-size:13px; background:var(--bg);
+  }
+  select{padding:9px 10px; border:1px solid var(--border); border-radius:8px; background:var(--bg); font-size:13px;}
+  button{
+    cursor:pointer; border:none; border-radius:8px; padding:9px 16px; font-size:13px; font-weight:600;
+  }
+  .btn-primary{background:var(--navy); color:#fff;}
+  .btn-primary:hover{background:var(--navy-2);}
+  .btn-ghost{background:transparent; color:var(--navy); border:1px solid var(--border);}
+  .btn-ghost:hover{background:var(--bg);}
+  .btn-danger{background:var(--red-bg); color:var(--red); padding:5px 10px; font-size:12px;}
+  .btn-small{padding:5px 10px; font-size:12px;}
+  .btn-meet{background:var(--amber-bg); color:var(--amber); padding:5px 10px; font-size:12px; white-space:nowrap;}
+
+  .table-scroll{overflow-x:auto;}
+  table{width:100%; border-collapse:collapse; font-size:13px; min-width:1180px;}
+  thead th{
+    text-align:left; padding:10px 8px; border-bottom:2px solid var(--navy); color:var(--navy);
+    cursor:pointer; user-select:none; font-size:11px; text-transform:uppercase; letter-spacing:.3px;
+    white-space:nowrap;
+  }
+  thead th:hover{color:var(--gold);}
+  tbody td{padding:7px 8px; border-bottom:1px solid var(--border); vertical-align:middle;}
+  tbody tr:hover{background:#FAFBFD;}
+  td input, td select{
+    width:100%; border:1px solid transparent; background:transparent; padding:4px 6px; border-radius:5px;
+    font-size:13px; font-family:inherit; color:var(--text);
+  }
+  td input:hover, td select:hover{border-color:var(--border);}
+  td input:focus, td select:focus{border-color:var(--navy-2); background:#fff; outline:none;}
+  td input[type=number]{text-align:right; font-variant-numeric:tabular-nums;}
+  .col-num{width:95px;}
+  .col-status{width:115px;}
+  .col-del{width:36px; text-align:center;}
+  .col-meet{width:150px; text-align:center;}
+  .readonly-num{text-align:center; font-variant-numeric:tabular-nums; color:var(--navy-2); font-weight:700;}
+
+  .badge{
+    display:inline-block; padding:3px 10px; border-radius:20px; font-size:11.5px; font-weight:700;
+  }
+  .badge.Confirmado{background:var(--green-bg); color:var(--green);}
+  .badge.Ativo{background:#E7EEF7; color:var(--navy-2);}
+  .badge.Pendente{background:var(--amber-bg); color:var(--amber);}
+  .badge.Cancelado{background:var(--red-bg); color:var(--red);}
+
+  .table-wrap{max-height:520px; overflow:auto; border:1px solid var(--border); border-radius:8px;}
+  .table-wrap table{margin:0;}
+  .table-wrap thead th{position:sticky; top:0; background:var(--surface); z-index:1;}
+
+  .empty{text-align:center; padding:40px 0; color:var(--muted);}
+  .footer-note{font-size:12px; color:var(--muted); margin-top:8px;}
+  .status-msg{font-size:12px; color:var(--muted); margin-left:auto;}
+
+  /* Modal */
+  .overlay{
+    position:fixed; inset:0; background:rgba(18,35,63,.45); display:none;
+    align-items:center; justify-content:center; z-index:50; padding:20px;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--surface); border-radius:12px; padding:24px; width:100%; max-width:640px;
+    max-height:85vh; overflow:auto; box-shadow:0 20px 50px rgba(18,35,63,.25);
+  }
+  .modal-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
+  .modal-head h3{font-size:18px;}
+  .modal-close{background:transparent; color:var(--muted); font-size:20px; padding:2px 8px;}
+  .meet-table{width:100%; border-collapse:collapse; font-size:13px; margin-bottom:12px;}
+  .meet-table th{
+    text-align:left; padding:8px 6px; border-bottom:2px solid var(--navy); color:var(--navy);
+    font-size:11px; text-transform:uppercase;
+  }
+  .meet-table td{padding:6px; border-bottom:1px solid var(--border);}
+  .meet-table input{width:100%; border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-size:13px; font-family:inherit;}
+  .meet-total{font-size:13px; color:var(--muted); margin-top:6px;}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div>
+    <div class="eyebrow">Painel da campanha</div>
+    <h1>Gestão de Votos por Liderança</h1>
+    <div class="sub">Lideranças, bairros, reuniões marcadas e votos certos/confirmados — atualizado em tempo real.</div>
+  </div>
+  <div class="status-msg" id="saveStatus"></div>
+</div>
+
+<div class="cards">
+  <div class="card">
+    <div class="label">Lideranças</div>
+    <div class="value" id="kpiTotalLid">0</div>
+  </div>
+  <div class="card gold">
+    <div class="label">Votos prometidos</div>
+    <div class="value" id="kpiPrometidos">0</div>
+  </div>
+  <div class="card amber">
+    <div class="label">Votos certos</div>
+    <div class="value" id="kpiCertos">0</div>
+  </div>
+  <div class="card confirm">
+    <div class="label">Votos confirmados</div>
+    <div class="value green" id="kpiConfirmados">0</div>
+  </div>
+  <div class="card">
+    <div class="label">% de confirmação</div>
+    <div class="value small" id="kpiPct">0%</div>
+  </div>
+  <div class="card">
+    <div class="label">Reuniões realizadas</div>
+    <div class="value small" id="kpiReunioes">0</div>
+  </div>
+  <div class="card">
+    <div class="label">Pessoas alcançadas</div>
+    <div class="value small" id="kpiPessoas">0</div>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="panel">
+    <h2>Votos confirmados por bairro</h2>
+    <div id="regionChart"></div>
+    <div class="footer-note" id="regionEmpty" style="display:none;">Cadastre lideranças com bairro preenchido para ver o gráfico.</div>
+  </div>
+  <div class="panel">
+    <h2>Top lideranças (votos confirmados)</h2>
+    <div id="topChart"></div>
+    <div class="footer-note" id="topEmpty" style="display:none;">Nenhuma liderança cadastrada ainda.</div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Lideranças</h2>
+  <div class="toolbar">
+    <input type="text" id="searchBox" placeholder="Buscar por nome, bairro ou coordenador...">
+    <select id="statusFilter">
+      <option value="">Todos os status</option>
+      <option value="Confirmado">Confirmado</option>
+      <option value="Ativo">Ativo</option>
+      <option value="Pendente">Pendente</option>
+      <option value="Cancelado">Cancelado</option>
+    </select>
+    <button class="btn-primary" id="addBtn">+ Nova liderança</button>
+  </div>
+
+  <div class="table-wrap table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th data-key="nome">Liderança</th>
+          <th data-key="bairro">Bairro</th>
+          <th data-key="coordenador">Coordenador</th>
+          <th data-key="telefone">Contato</th>
+          <th data-key="prometidos" class="col-num">Prometidos</th>
+          <th data-key="certos" class="col-num">Certos</th>
+          <th data-key="confirmados" class="col-num">Confirmados</th>
+          <th class="col-meet">Reuniões</th>
+          <th class="col-num">Pessoas</th>
+          <th data-key="status" class="col-status">Status</th>
+          <th class="col-del"></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+  <div class="empty" id="emptyState" style="display:none;">Nenhuma liderança cadastrada ainda. Clique em "+ Nova liderança" para começar.</div>
+  <div class="footer-note">Os dados ficam salvos automaticamente e são visíveis só para você. "Reuniões" e "Pessoas" são calculados a partir do que você registrar em cada liderança.</div>
+</div>
+
+<!-- Modal de reunioes -->
+<div class="overlay" id="meetOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="meetTitle">Reuniões</h3>
+      <button class="modal-close" id="meetClose">&times;</button>
+    </div>
+    <table class="meet-table">
+      <thead>
+        <tr><th>Data</th><th>Local</th><th>Pessoas</th><th></th></tr>
+      </thead>
+      <tbody id="meetBody"></tbody>
+    </table>
+    <button class="btn-ghost btn-small" id="addMeetBtn">+ Nova reunião</button>
+    <div class="meet-total" id="meetTotal"></div>
+  </div>
+</div>
+
+<script>
+let data = [];
+let sortKey = null;
+let sortDir = 1;
+let activeMeetId = null;
+const STORAGE_KEY = 'campanha-liderancas-v2';
+
+function uid(){ return 'l' + Math.random().toString(36).slice(2,10); }
+
+async function loadData(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    data = res ? JSON.parse(res.value) : [];
+  }catch(e){
+    data = [];
+  }
+  data.forEach(d=>{ if(!Array.isArray(d.reunioes)) d.reunioes = []; });
+  render();
+}
+
+async function saveData(){
+  const statusEl = document.getElementById('saveStatus');
+  statusEl.textContent = 'Salvando...';
+  try{
+    await window.storage.set(STORAGE_KEY, JSON.stringify(data), false);
+    statusEl.textContent = 'Salvo';
+    setTimeout(()=>{ if(statusEl.textContent==='Salvo') statusEl.textContent=''; }, 1500);
+  }catch(e){
+    statusEl.textContent = 'Erro ao salvar — tente novamente';
+  }
+}
+
+function addRow(){
+  data.unshift({
+    id: uid(), nome:'', bairro:'', coordenador:'', telefone:'',
+    prometidos:0, certos:0, confirmados:0, status:'Ativo', reunioes:[]
+  });
+  saveData();
+  render();
+}
+
+function deleteRow(id){
+  data = data.filter(d=>d.id!==id);
+  saveData();
+  render();
+}
+
+function updateField(id, field, value){
+  const row = data.find(d=>d.id===id);
+  if(!row) return;
+  if(field==='prometidos' || field==='certos' || field==='confirmados'){
+    value = Math.max(0, parseInt(value)||0);
+  }
+  row[field] = value;
+  saveData();
+  renderKpisAndCharts();
+}
+
+function getFiltered(){
+  const q = document.getElementById('searchBox').value.trim().toLowerCase();
+  const statusF = document.getElementById('statusFilter').value;
+  let rows = data.filter(d=>{
+    const matchQ = !q || [d.nome,d.bairro,d.coordenador].some(v=>(v||'').toLowerCase().includes(q));
+    const matchS = !statusF || d.status===statusF;
+    return matchQ && matchS;
+  });
+  if(sortKey){
+    rows.sort((a,b)=>{
+      let av = a[sortKey], bv = b[sortKey];
+      if(typeof av === 'number' || typeof bv === 'number'){
+        av = av||0; bv = bv||0;
+        return (av-bv)*sortDir;
+      }
+      av = (av||'').toString().toLowerCase();
+      bv = (bv||'').toString().toLowerCase();
+      return av.localeCompare(bv)*sortDir;
+    });
+  }
+  return rows;
+}
+
+function esc(s){
+  const d = document.createElement('div');
+  d.textContent = s==null? '': s;
+  return d.innerHTML;
+}
+
+function pessoasTotal(row){
+  return (row.reunioes||[]).reduce((s,m)=>s+(parseInt(m.pessoas)||0),0);
+}
+
+function renderTable(){
+  const rows = getFiltered();
+  const tbody = document.getElementById('tableBody');
+  document.getElementById('emptyState').style.display = data.length===0 ? 'block' : 'none';
+  tbody.innerHTML = rows.map(r=>`
+    <tr>
+      <td><input type="text" value="${esc(r.nome)}" placeholder="Nome" onchange="updateField('${r.id}','nome',this.value)"></td>
+      <td><input type="text" value="${esc(r.bairro)}" placeholder="Bairro" onchange="updateField('${r.id}','bairro',this.value)"></td>
+      <td><input type="text" value="${esc(r.coordenador)}" placeholder="Coordenador" onchange="updateField('${r.id}','coordenador',this.value)"></td>
+      <td><input type="text" value="${esc(r.telefone)}" placeholder="Telefone" onchange="updateField('${r.id}','telefone',this.value)"></td>
+      <td class="col-num"><input type="number" min="0" value="${r.prometidos||0}" onchange="updateField('${r.id}','prometidos',this.value)"></td>
+      <td class="col-num"><input type="number" min="0" value="${r.certos||0}" onchange="updateField('${r.id}','certos',this.value)"></td>
+      <td class="col-num"><input type="number" min="0" value="${r.confirmados||0}" onchange="updateField('${r.id}','confirmados',this.value)"></td>
+      <td class="col-meet"><button class="btn-meet" onclick="openMeetings('${r.id}')">${(r.reunioes||[]).length} reunião(ões)</button></td>
+      <td class="col-num readonly-num">${pessoasTotal(r)}</td>
+      <td class="col-status">
+        <select onchange="updateField('${r.id}','status',this.value)">
+          ${['Ativo','Confirmado','Pendente','Cancelado'].map(s=>`<option value="${s}" ${r.status===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </td>
+      <td class="col-del"><button class="btn-danger" onclick="deleteRow('${r.id}')">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+function renderKpisAndCharts(){
+  const totalLid = data.filter(d=>d.nome && d.nome.trim()!=='').length;
+  const totalProm = data.reduce((s,d)=>s+(d.prometidos||0),0);
+  const totalCertos = data.reduce((s,d)=>s+(d.certos||0),0);
+  const totalConf = data.reduce((s,d)=>s+(d.confirmados||0),0);
+  const totalReunioes = data.reduce((s,d)=>s+((d.reunioes||[]).length),0);
+  const totalPessoas = data.reduce((s,d)=>s+pessoasTotal(d),0);
+  const pct = totalProm>0 ? Math.round((totalConf/totalProm)*100) : 0;
+
+  document.getElementById('kpiTotalLid').textContent = totalLid.toLocaleString('pt-BR');
+  document.getElementById('kpiPrometidos').textContent = totalProm.toLocaleString('pt-BR');
+  document.getElementById('kpiCertos').textContent = totalCertos.toLocaleString('pt-BR');
+  document.getElementById('kpiConfirmados').textContent = totalConf.toLocaleString('pt-BR');
+  document.getElementById('kpiPct').textContent = pct + '%';
+  document.getElementById('kpiReunioes').textContent = totalReunioes.toLocaleString('pt-BR');
+  document.getElementById('kpiPessoas').textContent = totalPessoas.toLocaleString('pt-BR');
+
+  // Bairro chart
+  const byBairro = {};
+  data.forEach(d=>{
+    const key = (d.bairro||'').trim();
+    if(!key) return;
+    byBairro[key] = (byBairro[key]||0) + (d.confirmados||0);
+  });
+  const bairroEntries = Object.entries(byBairro).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const regionChartEl = document.getElementById('regionChart');
+  const regionEmptyEl = document.getElementById('regionEmpty');
+  if(bairroEntries.length===0){
+    regionChartEl.innerHTML=''; regionEmptyEl.style.display='block';
+  }else{
+    regionEmptyEl.style.display='none';
+    const maxV = Math.max(...bairroEntries.map(e=>e[1]), 1);
+    regionChartEl.innerHTML = bairroEntries.map(([name,val])=>`
+      <div class="bar-row">
+        <div class="name" title="${esc(name)}">${esc(name)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(val/maxV*100).toFixed(1)}%"></div></div>
+        <div class="bar-nums">${val.toLocaleString('pt-BR')}</div>
+      </div>
+    `).join('');
+  }
+
+  // Top liderancas chart
+  const topRows = data.filter(d=>d.nome && d.nome.trim()!=='')
+    .slice().sort((a,b)=>(b.confirmados||0)-(a.confirmados||0)).slice(0,8);
+  const topChartEl = document.getElementById('topChart');
+  const topEmptyEl = document.getElementById('topEmpty');
+  if(topRows.length===0){
+    topChartEl.innerHTML=''; topEmptyEl.style.display='block';
+  }else{
+    topEmptyEl.style.display='none';
+    const maxV2 = Math.max(...topRows.map(r=>r.confirmados||0), 1);
+    topChartEl.innerHTML = topRows.map(r=>`
+      <div class="bar-row">
+        <div class="name" title="${esc(r.nome)}">${esc(r.nome)}</div>
+        <div class="bar-track"><div class="bar-fill gold" style="width:${((r.confirmados||0)/maxV2*100).toFixed(1)}%"></div></div>
+        <div class="bar-nums">${(r.confirmados||0).toLocaleString('pt-BR')}</div>
+      </div>
+    `).join('');
+  }
+}
+
+function render(){
+  renderTable();
+  renderKpisAndCharts();
+}
+
+// ---- Reunioes modal ----
+function openMeetings(id){
+  activeMeetId = id;
+  const row = data.find(d=>d.id===id);
+  if(!row) return;
+  document.getElementById('meetTitle').textContent = 'Reuniões — ' + (row.nome || 'Sem nome');
+  renderMeetings();
+  document.getElementById('meetOverlay').classList.add('open');
+}
+
+function closeMeetings(){
+  document.getElementById('meetOverlay').classList.remove('open');
+  activeMeetId = null;
+  renderTable();
+  renderKpisAndCharts();
+}
+
+function renderMeetings(){
+  const row = data.find(d=>d.id===activeMeetId);
+  if(!row) return;
+  const tbody = document.getElementById('meetBody');
+  tbody.innerHTML = (row.reunioes||[]).map((m,idx)=>`
+    <tr>
+      <td><input type="date" value="${esc(m.data)}" onchange="updateMeeting(${idx},'data',this.value)"></td>
+      <td><input type="text" value="${esc(m.local)}" placeholder="Local da reunião" onchange="updateMeeting(${idx},'local',this.value)"></td>
+      <td><input type="number" min="0" value="${m.pessoas||0}" onchange="updateMeeting(${idx},'pessoas',this.value)"></td>
+      <td><button class="btn-danger" onclick="deleteMeeting(${idx})">✕</button></td>
+    </tr>
+  `).join('');
+  const total = pessoasTotal(row);
+  document.getElementById('meetTotal').textContent =
+    `${(row.reunioes||[]).length} reunião(ões) marcada(s) · ${total} pessoas alcançadas no total`;
+}
+
+function addMeeting(){
+  const row = data.find(d=>d.id===activeMeetId);
+  if(!row) return;
+  row.reunioes.push({data:'', local:'', pessoas:0});
+  saveData();
+  renderMeetings();
+}
+
+function updateMeeting(idx, field, value){
+  const row = data.find(d=>d.id===activeMeetId);
+  if(!row) return;
+  if(field==='pessoas') value = Math.max(0, parseInt(value)||0);
+  row.reunioes[idx][field] = value;
+  saveData();
+  renderMeetings();
+}
+
+function deleteMeeting(idx){
+  const row = data.find(d=>d.id===activeMeetId);
+  if(!row) return;
+  row.reunioes.splice(idx,1);
+  saveData();
+  renderMeetings();
+}
+
+document.getElementById('addBtn').addEventListener('click', addRow);
+document.getElementById('searchBox').addEventListener('input', renderTable);
+document.getElementById('statusFilter').addEventListener('change', renderTable);
+document.getElementById('meetClose').addEventListener('click', closeMeetings);
+document.getElementById('addMeetBtn').addEventListener('click', addMeeting);
+document.getElementById('meetOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='meetOverlay') closeMeetings();
+});
+
+document.querySelectorAll('thead th[data-key]').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.getAttribute('data-key');
+    if(sortKey===key){ sortDir *= -1; } else { sortKey = key; sortDir = 1; }
+    renderTable();
+  });
+});
+
+loadData();
+</script>
+
+</body>
+</html>
